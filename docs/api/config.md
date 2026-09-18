@@ -1,0 +1,3 @@
+# `quantrules.config`
+
+::: quantrules.config

@@ -1,0 +1,3 @@
+# `quantrules.defaults`
+
+::: quantrules.defaults

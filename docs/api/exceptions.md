@@ -1,0 +1,3 @@
+# `quantrules.exceptions`
+
+::: quantrules.exceptions

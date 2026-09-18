@@ -1,0 +1,17 @@
+quantrules
+Copyright 2026 Milton Analytics, LLC
+
+This product includes software developed at Milton Analytics, LLC
+(https://github.com/Milton-Analytics-LLC).
+
+quantrules implements portfolio construction and trading-rule techniques
+described in Robert Carver's "Systematic Trading" (Harriman House, 2015) and
+on his blog at https://qoppac.blogspot.com. Those works are cited as
+references only. All code in this repository was written from first
+principles and from publicly published formulas. No code was copied or
+adapted from pysystemtrade or any other GPL-licensed project.
+
+DISCLAIMER: This software is provided for research and educational purposes
+only. It is not investment advice, and nothing it produces is a
+recommendation to buy or sell any security. Trading involves substantial
+risk of loss. See DISCLAIMER.md.

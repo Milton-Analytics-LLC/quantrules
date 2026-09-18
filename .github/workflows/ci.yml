@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "1"
+
+jobs:
+  test:
+    name: test ${{ matrix.os }} py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Ubuntu covers every supported Python; macOS and Windows cover the ends of
+        # the range. Python 3.10 resolves to pandas 2.x and 3.13 to pandas 3.x, so
+        # the matrix also proves the `pandas>=2.0` floor is real.
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.13"
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.13"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Sync dependencies
+        run: uv sync --locked --group test --all-extras --python ${{ matrix.python-version }}
+
+      - name: Report resolved versions
+        run: uv run --no-sync python -c "import sys, pandas, numpy; print(sys.version); print('pandas', pandas.__version__, 'numpy', numpy.__version__)"
+
+      - name: Run tests
+        run: uv run --no-sync pytest --cov-report=xml
+
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
+        uses: codecov/codecov-action@v5
+        continue-on-error: true
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --locked --group lint
+      - name: ruff check
+        run: uv run --no-sync ruff check --output-format=github .
+      - name: ruff format
+        run: uv run --no-sync ruff format --check .
+
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      # The test group is required too: mypy type-checks the test suite, which
+      # imports pytest and hypothesis.
+      - run: uv sync --locked --group typecheck --group test --all-extras
+      - run: uv run --no-sync mypy
+
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - run: uv sync --locked --group docs
+      - name: Build documentation
+        run: uv run --no-sync mkdocs build --strict
+
+  build:
+    name: build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Check the wheel installs and imports cleanly
+        run: |
+          uv run --no-project --with dist/*.whl --refresh python -c "import quantrules; print(quantrules.__version__)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+  ci-ok:
+    # One required status check for branch protection, instead of naming every
+    # matrix leg individually.
+    name: ci-ok
+    if: always()
+    needs: [test, lint, typecheck, docs, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job did not succeed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "All CI jobs succeeded."

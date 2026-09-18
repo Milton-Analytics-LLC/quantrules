@@ -1,0 +1,47 @@
+name: Bug report
+description: Something produces a wrong or unexpected result.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A wrong number is a bug worth reporting. Please include the arithmetic you
+        expected, so the fix can be pinned down by a test.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you get, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >
+        The smallest self-contained snippet that shows it. Please construct the input
+        data in the snippet rather than loading a file.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: quantrules version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Python and pandas versions
+      placeholder: "Python 3.12.4, pandas 2.2.2"
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked that this is not a question about whether the strategy is profitable
+          required: true

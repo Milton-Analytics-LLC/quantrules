@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a new indicator, rule, or capability.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the gap. What can you not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Sketch the function signature and how you would call it.
+      render: python
+  - type: input
+    id: source
+    attributes:
+      label: Source of the formula
+      description: >
+        A paper, book, or public article defining the calculation. Required for new
+        indicators and rules so the implementation can be written from the formula.
+  - type: checkboxes
+    id: licence
+    attributes:
+      label: Licensing
+      options:
+        - label: >
+            My proposal does not require copying or adapting code from pysystemtrade or
+            any other GPL or AGPL project
+          required: true
