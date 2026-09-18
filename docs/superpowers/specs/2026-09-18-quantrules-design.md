@@ -88,7 +88,7 @@ quantrules/
   correlation.py     # shared causal correlation + shrinkage
   testing.py         # assert_causal, public
   _typing.py  _validation.py
-  indicators/  averages volatility trend channels oscillators normalize options/
+  indicators/  averages volatility trend channels oscillators normalize volume breadth events options/
   rules/       base ewmac carry breakout mean_reversion
   forecasts/   scaling capping diversification combine
   sizing/      volatility_target instrument_vol position buffering
@@ -116,7 +116,10 @@ to source IV elsewhere.
 
 1. **Tooling, repo, CI, licensing, `defaults`/`config`/`_validation`, causality
    harness.** (done)
-2. `indicators` (non-options).
+2. `indicators` (non-options). Beyond Carver's own set (averages, volatility, trend,
+   channels, oscillators, normalize) the catalog also ships `volume`, `breadth` and
+   `events` modules and rolling rank/percentile. The framework and data contract are
+   unchanged.
 3. `rules` + `forecasts`.
 4. `sizing` + `portfolio`.
 5. `evaluate` + end-to-end example on a bundled synthetic dataset.
