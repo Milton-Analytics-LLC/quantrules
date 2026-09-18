@@ -71,7 +71,7 @@ same property.
 ## Phases
 
 1. ~~Tooling, repo, CI, licensing, `defaults`/`config`/`_validation`, causality harness.~~ **Done.**
-2. `indicators` (non-options) — averages, volatility, trend, channels, oscillators, normalize.
+2. `indicators` (non-options) — averages, volatility, trend, channels, oscillators, normalize, volume, breadth, events. The catalog intentionally extends past Carver's own set; the framework and data contract are unchanged.
 3. `rules` + `forecasts` — EWMAC, carry, breakout, mean reversion; scaling, capping, weights, FDM, combination.
 4. `sizing` + `portfolio` — vol targeting, instrument vol, subsystem position, buffering, IDM, handcrafting, costs.
 5. `evaluate` + end-to-end example on a bundled synthetic dataset.

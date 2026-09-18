@@ -60,8 +60,19 @@ nav:
       - Overview: concepts/index.md
       - The data contract: concepts/data-contract.md
       - No look-ahead: concepts/causality.md
+      - Using from NumPy: concepts/using-from-numpy.md
   - API reference:
       - defaults: api/defaults.md
       - config: api/config.md
       - exceptions: api/exceptions.md
       - testing: api/testing.md
+      - Indicators:
+          - averages: api/indicators/averages.md
+          - volatility: api/indicators/volatility.md
+          - trend: api/indicators/trend.md
+          - channels: api/indicators/channels.md
+          - oscillators: api/indicators/oscillators.md
+          - normalize: api/indicators/normalize.md
+          - volume: api/indicators/volume.md
+          - breadth: api/indicators/breadth.md
+          - events: api/indicators/events.md
