@@ -23,7 +23,19 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any
 
+from quantrules.indicators import (
+    averages,
+    breadth,
+    channels,
+    events,
+    normalize,
+    oscillators,
+    trend,
+    volatility,
+    volume,
+)
 from quantrules.testing import Panel
+from tests.support import breadth_data, crossing_pair, events_series, ohlcv, random_walk
 
 _TIME_SERIES_RETURN_MARKERS = ("Series", "DataFrame", "Frame")
 
@@ -46,7 +58,174 @@ class CausalCase:
 
 
 # Populated from phase 2 onward, one entry per public time-series function.
-CAUSAL_CASES: list[CausalCase] = []
+CAUSAL_CASES: list[CausalCase] = [
+    CausalCase(
+        "quantrules.indicators.averages.sma",
+        lambda data: averages.sma(data, window=10),
+        lambda: random_walk(120, seed=101),
+    ),
+    CausalCase(
+        "quantrules.indicators.averages.ewma",
+        lambda data: averages.ewma(data, span=10),
+        lambda: random_walk(120, seed=102),
+    ),
+    CausalCase(
+        "quantrules.indicators.volatility.rolling_std",
+        lambda data: volatility.rolling_std(data, window=10),
+        lambda: random_walk(120, seed=203),
+    ),
+    CausalCase(
+        "quantrules.indicators.volatility.ewma_volatility",
+        lambda data: volatility.ewma_volatility(data, span=36, min_periods=10),
+        lambda: random_walk(150, seed=204),
+    ),
+    CausalCase(
+        "quantrules.indicators.volatility.realized_volatility",
+        lambda data: volatility.realized_volatility(data, window=21),
+        lambda: random_walk(150, seed=205),
+    ),
+    CausalCase(
+        "quantrules.indicators.volatility.true_range",
+        lambda df: volatility.true_range(df["high"], df["low"], df["close"]),
+        lambda: ohlcv(150, seed=206),
+    ),
+    CausalCase(
+        "quantrules.indicators.volatility.atr",
+        lambda df: volatility.atr(df["high"], df["low"], df["close"], window=14),
+        lambda: ohlcv(150, seed=207),
+    ),
+    CausalCase(
+        "quantrules.indicators.volatility.atr_percent",
+        lambda df: volatility.atr_percent(df["high"], df["low"], df["close"], window=14),
+        lambda: ohlcv(150, seed=208),
+    ),
+    CausalCase(
+        "quantrules.indicators.trend.macd",
+        lambda data: trend.macd(data, fast=12, slow=26, signal=9),
+        lambda: random_walk(120, seed=301),
+    ),
+    CausalCase(
+        "quantrules.indicators.trend.ewma_crossover",
+        lambda data: trend.ewma_crossover(data, fast=8, slow=32),
+        lambda: random_walk(120, seed=302),
+    ),
+    CausalCase(
+        "quantrules.indicators.trend.rolling_slope",
+        lambda data: trend.rolling_slope(data, window=10),
+        lambda: random_walk(120, seed=303),
+    ),
+    CausalCase(
+        "quantrules.indicators.channels.rolling_max",
+        lambda data: channels.rolling_max(data, window=10),
+        lambda: random_walk(120, seed=401),
+    ),
+    CausalCase(
+        "quantrules.indicators.channels.rolling_min",
+        lambda data: channels.rolling_min(data, window=10),
+        lambda: random_walk(120, seed=402),
+    ),
+    CausalCase(
+        "quantrules.indicators.channels.donchian_channels",
+        lambda data: channels.donchian_channels(data, window=10),
+        lambda: random_walk(120, seed=403),
+    ),
+    CausalCase(
+        "quantrules.indicators.channels.bollinger_bands",
+        lambda data: channels.bollinger_bands(data, window=20),
+        lambda: random_walk(120, seed=404),
+    ),
+    CausalCase(
+        "quantrules.indicators.channels.keltner_channels",
+        lambda df: channels.keltner_channels(df["high"], df["low"], df["close"], window=20),
+        lambda: ohlcv(150, seed=405),
+    ),
+    CausalCase(
+        "quantrules.indicators.channels.keltner_position",
+        lambda df: channels.keltner_position(df["high"], df["low"], df["close"], window=20),
+        lambda: ohlcv(150, seed=406),
+    ),
+    CausalCase(
+        "quantrules.indicators.oscillators.rsi",
+        lambda data: oscillators.rsi(data, window=14),
+        lambda: random_walk(150, seed=501),
+    ),
+    CausalCase(
+        "quantrules.indicators.normalize.zscore",
+        lambda data: normalize.zscore(data, window=20),
+        lambda: random_walk(120, seed=601),
+    ),
+    CausalCase(
+        "quantrules.indicators.normalize.clip",
+        lambda data: normalize.clip(data, lower=90.0, upper=110.0),
+        lambda: random_walk(120, seed=602),
+    ),
+    CausalCase(
+        "quantrules.indicators.normalize.rolling_rank",
+        lambda data: normalize.rolling_rank(data, window=20),
+        lambda: random_walk(120, seed=603),
+    ),
+    CausalCase(
+        "quantrules.indicators.normalize.rolling_percentile",
+        lambda data: normalize.rolling_percentile(data, window=20),
+        lambda: random_walk(120, seed=604),
+    ),
+    CausalCase(
+        "quantrules.indicators.volume.obv",
+        lambda df: volume.obv(df["close"], df["volume"]),
+        lambda: ohlcv(150, seed=801),
+    ),
+    CausalCase(
+        "quantrules.indicators.volume.accumulation_distribution",
+        lambda df: volume.accumulation_distribution(
+            df["high"], df["low"], df["close"], df["volume"]
+        ),
+        lambda: ohlcv(150, seed=802),
+    ),
+    CausalCase(
+        "quantrules.indicators.volume.chaikin_money_flow",
+        lambda df: volume.chaikin_money_flow(
+            df["high"], df["low"], df["close"], df["volume"], window=20
+        ),
+        lambda: ohlcv(150, seed=803),
+    ),
+    CausalCase(
+        "quantrules.indicators.breadth.advance_decline_line",
+        lambda df: breadth.advance_decline_line(df["advances"], df["declines"]),
+        lambda: breadth_data(150, seed=901),
+    ),
+    CausalCase(
+        "quantrules.indicators.breadth.mcclellan_oscillator",
+        lambda df: breadth.mcclellan_oscillator(df["advances"], df["declines"]),
+        lambda: breadth_data(150, seed=902),
+    ),
+    CausalCase(
+        "quantrules.indicators.breadth.new_high_new_low_index",
+        lambda df: breadth.new_high_new_low_index(df["new_highs"], df["new_lows"]),
+        lambda: breadth_data(150, seed=903),
+    ),
+    CausalCase(
+        "quantrules.indicators.breadth.trin",
+        lambda df: breadth.trin(
+            df["advances"], df["declines"], df["advancing_volume"], df["declining_volume"]
+        ),
+        lambda: breadth_data(150, seed=904),
+    ),
+    CausalCase(
+        "quantrules.indicators.events.cross_up",
+        lambda df: events.cross_up(df["fast"], df["slow"]),
+        lambda: crossing_pair(150, seed=1001),
+    ),
+    CausalCase(
+        "quantrules.indicators.events.cross_down",
+        lambda df: events.cross_down(df["fast"], df["slow"]),
+        lambda: crossing_pair(150, seed=1002),
+    ),
+    CausalCase(
+        "quantrules.indicators.events.bars_since",
+        events.bars_since,
+        lambda: events_series(150, seed=1003),
+    ),
+]
 
 
 def returns_time_series(candidate: object) -> bool:

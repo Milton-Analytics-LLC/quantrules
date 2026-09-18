@@ -25,6 +25,8 @@ from quantrules.exceptions import ConfigurationError, DataValidationError
 
 __all__ = [
     "ensure_aligned",
+    "ensure_ddof",
+    "ensure_finite",
     "ensure_fraction",
     "ensure_non_negative",
     "ensure_positive",
@@ -48,6 +50,22 @@ def _as_finite_float(value: Any, name: str) -> float:  # noqa: ANN401
         message = f"{name} must be finite, got {value!r}"
         raise ConfigurationError(message)
     return number
+
+
+def ensure_finite(value: float, name: str) -> float:
+    """Return ``value`` as a finite float, rejecting `NaN` and infinities.
+
+    Args:
+        value: The value to check.
+        name: Parameter name, used in the error message.
+
+    Returns:
+        ``value`` as a finite float.
+
+    Raises:
+        ConfigurationError: If ``value`` is not a finite real number.
+    """
+    return _as_finite_float(value, name)
 
 
 def ensure_positive(value: float, name: str) -> float:
@@ -135,6 +153,38 @@ def ensure_positive_int(value: int, name: str) -> int:
         message = f"{name} must be greater than 0, got {number}"
         raise ConfigurationError(message)
     return number
+
+
+def ensure_ddof(ddof: int, window: int, name: str = "ddof") -> int:
+    """Validate delta degrees of freedom against a window size.
+
+    A rolling standard deviation over ``window`` observations needs
+    ``ddof`` strictly below ``window``; otherwise every window has no degrees of
+    freedom left and the result is silently all `NaN`.
+
+    Args:
+        ddof: Delta degrees of freedom to check.
+        window: The window size ``ddof`` will be used with.
+        name: Parameter name, used in the error message.
+
+    Returns:
+        ``ddof`` as an int.
+
+    Raises:
+        ConfigurationError: If ``ddof`` is not an integer of zero or more that is
+            strictly less than ``window``.
+    """
+    if isinstance(ddof, bool) or not isinstance(ddof, (int, np.integer)):
+        message = f"{name} must be an integer, got {type(ddof).__name__}"
+        raise ConfigurationError(message)
+    value = int(ddof)
+    if value < 0:
+        message = f"{name} must be 0 or greater, got {value}"
+        raise ConfigurationError(message)
+    if value >= window:
+        message = f"{name} ({value}) must be less than window ({window})"
+        raise ConfigurationError(message)
+    return value
 
 
 def ensure_series(values: object, name: str) -> FloatSeries:
