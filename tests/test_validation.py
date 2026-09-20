@@ -10,6 +10,8 @@ import pytest
 
 from quantrules._validation import (
     ensure_aligned,
+    ensure_ddof,
+    ensure_finite,
     ensure_fraction,
     ensure_non_negative,
     ensure_positive,
@@ -165,6 +167,43 @@ class TestEnsureAligned:
 
     def test_accepts_a_single_series(self) -> None:
         ensure_aligned(price=series([1.0, 2.0]))
+
+
+class TestEnsureFinite:
+    def test_returns_a_finite_value(self) -> None:
+        assert ensure_finite(1.5, "lower") == 1.5
+
+    def test_rejects_nan(self) -> None:
+        with pytest.raises(ConfigurationError, match="lower"):
+            ensure_finite(float("nan"), "lower")
+
+    def test_rejects_infinity(self) -> None:
+        with pytest.raises(ConfigurationError, match="upper"):
+            ensure_finite(float("inf"), "upper")
+
+
+class TestEnsureDdof:
+    def test_accepts_ddof_below_window(self) -> None:
+        assert ensure_ddof(1, 3) == 1
+
+    def test_accepts_zero(self) -> None:
+        assert ensure_ddof(0, 1) == 0
+
+    def test_rejects_ddof_at_or_above_window(self) -> None:
+        with pytest.raises(ConfigurationError, match="ddof"):
+            ensure_ddof(3, 3)
+
+    def test_rejects_negative_ddof(self) -> None:
+        with pytest.raises(ConfigurationError, match="ddof"):
+            ensure_ddof(-1, 3)
+
+    def test_rejects_a_bool(self) -> None:
+        with pytest.raises(ConfigurationError, match="ddof"):
+            ensure_ddof(True, 3)
+
+    def test_rejects_a_non_integer(self) -> None:
+        with pytest.raises(ConfigurationError, match="ddof"):
+            ensure_ddof(1.5, 3)  # type: ignore[arg-type]
 
 
 class TestExceptionHierarchy:

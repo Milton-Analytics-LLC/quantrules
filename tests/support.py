@@ -61,3 +61,76 @@ def random_walk(
 def trending_walk(periods: int, *, seed: int, annual_drift: float = 0.30) -> pd.Series:
     """Build a random walk with a strong upward drift, for trend-following tests."""
     return random_walk(periods, seed=seed, annual_drift=annual_drift)
+
+
+def ohlcv(
+    periods: int,
+    *,
+    seed: int,
+    start_price: float = 100.0,
+    annual_vol: float = 0.20,
+    start: str = DEFAULT_START,
+) -> pd.DataFrame:
+    """Build a deterministic OHLCV frame with valid bar geometry.
+
+    ``close`` is a geometric random walk; ``open`` jitters around it and the
+    high and low bracket both, so ``high >= max(open, close) >= min(open,
+    close) >= low`` holds on every bar and every value stays positive. Volume
+    is a positive random series.
+    """
+    rng = np.random.default_rng(seed)
+    close = random_walk(
+        periods, seed=seed, annual_vol=annual_vol, start_price=start_price, start=start
+    ).to_numpy()
+    open_ = close * (1.0 + rng.normal(0.0, 0.003, periods))
+    top = np.maximum(open_, close)
+    bottom = np.minimum(open_, close)
+    high = top * (1.0 + np.abs(rng.normal(0.0, 0.003, periods)))
+    low = bottom * (1.0 - np.abs(rng.normal(0.0, 0.003, periods)))
+    volume = rng.uniform(1e5, 1e6, periods)
+    return pd.DataFrame(
+        {"open": open_, "high": high, "low": low, "close": close, "volume": volume},
+        index=business_days(periods, start),
+        dtype="float64",
+    )
+
+
+def breadth_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build a deterministic market-breadth frame.
+
+    Advancing and declining issue counts and volumes are strictly positive (so
+    ratio-of-ratio measures never divide by zero); new-high and new-low counts
+    may be zero.
+    """
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame(
+        {
+            "advances": rng.integers(50, 500, periods),
+            "declines": rng.integers(50, 500, periods),
+            "advancing_volume": rng.uniform(1e6, 1e7, periods),
+            "declining_volume": rng.uniform(1e6, 1e7, periods),
+            "new_highs": rng.integers(0, 100, periods),
+            "new_lows": rng.integers(0, 100, periods),
+        },
+        index=business_days(periods, start),
+        dtype="float64",
+    )
+
+
+def crossing_pair(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build two aligned random walks as ``fast`` and ``slow`` columns."""
+    return pd.DataFrame(
+        {
+            "fast": random_walk(periods, seed=seed, start=start),
+            "slow": random_walk(periods, seed=seed + 1, start=start),
+        }
+    )
+
+
+def events_series(
+    periods: int, *, seed: int, rate: float = 0.2, start: str = DEFAULT_START
+) -> pd.Series:
+    """Build a deterministic 0/1 event series, roughly ``rate`` of the bars firing."""
+    rng = np.random.default_rng(seed)
+    flags = (rng.uniform(0.0, 1.0, periods) < rate).astype(float)
+    return pd.Series(flags, index=business_days(periods, start), dtype="float64")
