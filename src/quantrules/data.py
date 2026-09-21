@@ -58,7 +58,15 @@ class MarketData:
         if frame.shape[1] == 0:
             message = "MarketData requires at least one field"
             raise DataValidationError(message)
-        validated = {str(name): ensure_series(frame[name], str(name)) for name in frame.columns}
+        names = [str(name) for name in frame.columns]
+        if len(set(names)) != len(names):
+            duplicated = sorted(name for name in set(names) if names.count(name) > 1)
+            message = f"MarketData fields must have distinct names; duplicated: {duplicated}"
+            raise DataValidationError(message)
+        validated = {
+            name: ensure_series(frame[label], name)
+            for name, label in zip(names, frame.columns, strict=True)
+        }
         ensure_aligned(**validated)
         self._frame: Frame = pd.DataFrame(validated)
 

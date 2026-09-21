@@ -83,6 +83,18 @@ class TestValidation:
         with pytest.raises(DataValidationError, match="at least one field"):
             MarketData(frame)
 
+    def test_rejects_columns_that_collide_after_string_coercion(self) -> None:
+        # 1 (int) and "1" (str) are distinct labels that share a string form; keeping
+        # both as a field would otherwise silently drop one.
+        frame = pd.DataFrame([[1.0, 2.0]], columns=[1, "1"], index=business_days(1))
+        with pytest.raises(DataValidationError, match="distinct"):
+            MarketData(frame)
+
+    def test_rejects_duplicate_column_labels(self) -> None:
+        frame = pd.DataFrame([[1.0, 2.0]], columns=["price", "price"], index=business_days(1))
+        with pytest.raises(DataValidationError, match="distinct"):
+            MarketData(frame)
+
     def test_from_fields_rejects_misaligned_series(self) -> None:
         with pytest.raises(DataValidationError, match="identically"):
             MarketData.from_fields(price=series([1.0, 2.0]), carry=series([0.1, 0.2, 0.3]))
