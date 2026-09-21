@@ -34,8 +34,19 @@ from quantrules.indicators import (
     volatility,
     volume,
 )
+from quantrules.rules.breakout import breakout as breakout_rule
+from quantrules.rules.carry import carry as carry_rule
+from quantrules.rules.ewmac import ewmac as ewmac_rule
+from quantrules.rules.mean_reversion import mean_reversion as mean_reversion_rule
 from quantrules.testing import Panel
-from tests.support import breadth_data, crossing_pair, events_series, ohlcv, random_walk
+from tests.support import (
+    breadth_data,
+    carry_data,
+    crossing_pair,
+    events_series,
+    ohlcv,
+    random_walk,
+)
 
 _TIME_SERIES_RETURN_MARKERS = ("Series", "DataFrame", "Frame")
 
@@ -224,6 +235,31 @@ CAUSAL_CASES: list[CausalCase] = [
         "quantrules.indicators.events.bars_since",
         events.bars_since,
         lambda: events_series(150, seed=1003),
+    ),
+    CausalCase(
+        "quantrules.rules.ewmac.ewmac",
+        lambda df: ewmac_rule(
+            df["price"],
+            fast_span=8,
+            slow_span=32,
+            volatility=volatility.rolling_std(df["price"], window=32),
+        ),
+        lambda: random_walk(200, seed=1101).to_frame("price"),
+    ),
+    CausalCase(
+        "quantrules.rules.carry.carry",
+        lambda df: carry_rule(df["raw_carry"], volatility=df["volatility"], smoothing_span=90),
+        lambda: carry_data(200, seed=1102),
+    ),
+    CausalCase(
+        "quantrules.rules.breakout.breakout",
+        lambda data: breakout_rule(data, span=20, smoothing_span=10),
+        lambda: random_walk(150, seed=1103),
+    ),
+    CausalCase(
+        "quantrules.rules.mean_reversion.mean_reversion",
+        lambda data: mean_reversion_rule(data, window=20),
+        lambda: random_walk(150, seed=1104),
     ),
 ]
 

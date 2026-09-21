@@ -72,7 +72,7 @@ same property.
 
 1. ~~Tooling, repo, CI, licensing, `defaults`/`config`/`_validation`, causality harness.~~ **Done.**
 2. ~~`indicators` (non-options) — averages, volatility, trend, channels, oscillators, normalize, volume, breadth, events.~~ **Done.** The catalog intentionally extends past Carver's own set; the framework and data contract are unchanged.
-3. `rules` + `forecasts` — EWMAC, carry, breakout, mean reversion; scaling, capping, weights, FDM, combination.
+3. `rules` + `forecasts` — EWMAC, carry, breakout, mean reversion; scaling, capping, weights, FDM, combination. **In progress, landed as two PRs.** PR1 (done): the container-free rule maths, the `MarketData` container (`data.py`), and the `Rule` adapter + registry + lazy `quantrules.rules` entry-point discovery. PR2 (next): `forecasts` (scaling, capping, diversification/FDM, combination) and the shared `correlation.py`.
 4. `sizing` + `portfolio` — vol targeting, instrument vol, subsystem position, buffering, IDM, handcrafting, costs.
 5. `evaluate` + end-to-end example on a bundled synthetic dataset.
 6. `indicators.options` behind the `[options]` extra (includes a Black-Scholes/Black-76 IV solver).
@@ -95,6 +95,14 @@ Ask before guessing on these.
   phase needs them, and use them as test fixtures, never as text in the docs: forecast
   scalars per EWMAC speed (phase 3); FDM/IDM tables (phases 3–4); handcrafting
   candidate-weight tables (phase 4); cost and turnover figures in SR units (phase 4).
+  _Update:_ the user supplied the forecast scalars per EWMAC speed (2/8→10.6, 4/16→7.5,
+  8/32→5.3, 16/64→3.75, 32/128→2.65, 64/256→1.87); they go into the PR2 scaling tests as
+  fixtures, never into the docs. No FDM *table* is needed — the multiplier is computed
+  from the published formula `1/√(wᵀ C w)`, floored and capped at `2.5`.
+- **`data.py` (`MarketData`) and `correlation.py` are pulled forward into phase 3.** The
+  design spec lists both at the top level; issue #9 (phase 4) had claimed them. The `Rule`
+  adapter needs `MarketData` (delivered in PR1) and FDM needs a causal correlation matrix
+  (`correlation.py`, PR2). Issue #9 should **consume** these rather than rebuild them.
 - **Constants encoded in phase 1 that are worth confirming against the book**:
   `VOLATILITY_EWMA_SPAN` (36), `CARRY_SMOOTHING_SPAN` (90), `BUFFER_FRACTION` (0.10),
   `MAX_DIVERSIFICATION_MULTIPLIER` (2.5).

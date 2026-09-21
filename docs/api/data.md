@@ -1,0 +1,3 @@
+# `quantrules.data`
+
+::: quantrules.data
