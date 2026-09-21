@@ -66,6 +66,7 @@ nav:
       - config: api/config.md
       - exceptions: api/exceptions.md
       - data: api/data.md
+      - correlation: api/correlation.md
       - testing: api/testing.md
       - Indicators:
           - averages: api/indicators/averages.md
@@ -83,3 +84,8 @@ nav:
           - carry: api/rules/carry.md
           - breakout: api/rules/breakout.md
           - mean_reversion: api/rules/mean_reversion.md
+      - Forecasts:
+          - scaling: api/forecasts/scaling.md
+          - capping: api/forecasts/capping.md
+          - diversification: api/forecasts/diversification.md
+          - combine: api/forecasts/combine.md

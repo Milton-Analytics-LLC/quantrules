@@ -23,6 +23,11 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any
 
+from quantrules.correlation import rolling_correlation
+from quantrules.forecasts.capping import cap
+from quantrules.forecasts.combine import combine
+from quantrules.forecasts.diversification import forecast_diversification_multiplier
+from quantrules.forecasts.scaling import forecast_scalar, scale
 from quantrules.indicators import (
     averages,
     breadth,
@@ -44,9 +49,12 @@ from tests.support import (
     carry_data,
     crossing_pair,
     events_series,
+    forecast_panel,
     ohlcv,
     random_walk,
 )
+
+_EQUAL_WEIGHTS = {"rule_0": 1.0 / 3.0, "rule_1": 1.0 / 3.0, "rule_2": 1.0 / 3.0}
 
 _TIME_SERIES_RETURN_MARKERS = ("Series", "DataFrame", "Frame")
 
@@ -260,6 +268,36 @@ CAUSAL_CASES: list[CausalCase] = [
         "quantrules.rules.mean_reversion.mean_reversion",
         lambda data: mean_reversion_rule(data, window=20),
         lambda: random_walk(150, seed=1104),
+    ),
+    CausalCase(
+        "quantrules.correlation.rolling_correlation",
+        lambda df: rolling_correlation(df["fast"], df["slow"], min_periods=5),
+        lambda: crossing_pair(150, seed=1201),
+    ),
+    CausalCase(
+        "quantrules.forecasts.scaling.forecast_scalar",
+        lambda data: forecast_scalar(data, target=10.0, min_periods=20),
+        lambda: random_walk(200, seed=1202),
+    ),
+    CausalCase(
+        "quantrules.forecasts.scaling.scale",
+        lambda data: scale(data, target=10.0, min_periods=20),
+        lambda: random_walk(200, seed=1203),
+    ),
+    CausalCase(
+        "quantrules.forecasts.capping.cap",
+        lambda data: cap(data, cap=120.0),
+        lambda: random_walk(150, seed=1204),
+    ),
+    CausalCase(
+        "quantrules.forecasts.diversification.forecast_diversification_multiplier",
+        lambda df: forecast_diversification_multiplier(df, _EQUAL_WEIGHTS, min_periods=20),
+        lambda: forecast_panel(200, seed=1205),
+    ),
+    CausalCase(
+        "quantrules.forecasts.combine.combine",
+        lambda df: combine(df, _EQUAL_WEIGHTS, min_periods=20),
+        lambda: forecast_panel(200, seed=1206),
     ),
 ]
 

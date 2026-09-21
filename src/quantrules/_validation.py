@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
-from quantrules._typing import FloatSeries
+from quantrules._typing import FloatSeries, Frame
 from quantrules.exceptions import ConfigurationError, DataValidationError
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "ensure_ddof",
     "ensure_finite",
     "ensure_fraction",
+    "ensure_frame",
     "ensure_non_negative",
     "ensure_positive",
     "ensure_positive_int",
@@ -252,3 +253,42 @@ def ensure_aligned(**named_series: FloatSeries) -> None:
                 f"({len(other)} rows vs {len(reference)})"
             )
             raise DataValidationError(message)
+
+
+def ensure_frame(frame: object, name: str) -> Frame:
+    """Validate a `DataFrame` of named series against the data contract.
+
+    Each column is validated with `ensure_series` and returned as `float64`, so
+    the result shares the input's index and is never a mutated view of it. Column
+    labels are normalised to strings; two labels that collapse to the same string
+    (for example ``1`` and ``"1"``) are rejected rather than silently merged.
+
+    Args:
+        frame: The object to validate. Deliberately untyped: this is the boundary
+            at which an unknown object becomes a known frame.
+        name: Parameter name, used in the error message.
+
+    Returns:
+        The frame as `float64`, one validated column per input column.
+
+    Raises:
+        DataValidationError: If ``frame`` is not a `DataFrame`, has no columns, has
+            column labels that collide once normalised, or has a column that
+            violates the series contract.
+    """
+    if not isinstance(frame, pd.DataFrame):
+        message = f"{name} must be a DataFrame, got {type(frame).__name__}"
+        raise DataValidationError(message)
+    if frame.shape[1] == 0:
+        message = f"{name} must have at least one column"
+        raise DataValidationError(message)
+    labels = [str(label) for label in frame.columns]
+    if len(set(labels)) != len(labels):
+        duplicated = sorted(label for label in set(labels) if labels.count(label) > 1)
+        message = f"{name} columns must have distinct names; duplicated: {duplicated}"
+        raise DataValidationError(message)
+    validated = {
+        label: ensure_series(frame[original], f"{name}[{label!r}]")
+        for label, original in zip(labels, frame.columns, strict=True)
+    }
+    return pd.DataFrame(validated)

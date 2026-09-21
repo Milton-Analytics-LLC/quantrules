@@ -80,7 +80,7 @@ class TestValidation:
 
     def test_rejects_an_empty_frame(self) -> None:
         frame = pd.DataFrame(index=business_days(3))
-        with pytest.raises(DataValidationError, match="at least one field"):
+        with pytest.raises(DataValidationError, match="at least one column"):
             MarketData(frame)
 
     def test_rejects_columns_that_collide_after_string_coercion(self) -> None:
