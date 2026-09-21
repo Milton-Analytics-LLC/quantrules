@@ -134,3 +134,20 @@ def events_series(
     rng = np.random.default_rng(seed)
     flags = (rng.uniform(0.0, 1.0, periods) < rate).astype(float)
     return pd.Series(flags, index=business_days(periods, start), dtype="float64")
+
+
+def carry_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build aligned ``raw_carry`` and ``volatility`` columns for the carry rule.
+
+    ``raw_carry`` is a signed carry measure and ``volatility`` is strictly
+    positive, so normalising one by the other never divides by zero.
+    """
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame(
+        {
+            "raw_carry": rng.normal(0.0, 1.0, periods),
+            "volatility": rng.uniform(0.5, 2.0, periods),
+        },
+        index=business_days(periods, start),
+        dtype="float64",
+    )

@@ -11,6 +11,21 @@ While the version is `0.x`, the public API may change in a minor release.
 
 ### Added
 
+- `quantrules.rules` - the trading-rule layer. Container-free rule maths, each built on the
+  phase-2 indicators, scaled and capped later by `quantrules.forecasts`, and covered by a
+  registered no-look-ahead check:
+    - `ewmac`: a volatility-normalised fast-minus-slow EWMA crossover.
+    - `carry`: a volatility-normalised, EWMA-smoothed carry measure.
+    - `breakout`: price's position within its rolling high-low channel, optionally smoothed.
+    - `mean_reversion`: the negated rolling z-score of the price.
+- `quantrules.data.MarketData` - an immutable container bundling an instrument's named
+  fields on one validated `DatetimeIndex`, the uniform input a registered rule consumes.
+- A rule registry: `Rule`, the `register_rule` decorator, `get_rule` and `available_rules`,
+  with lazy `importlib.metadata` discovery on the `quantrules.rules` entry-point group so a
+  separate distribution can ship rules that are found without changes here. A third-party
+  name colliding with a built-in raises rather than shadowing it. The six standard EWMAC
+  speeds and carry are registered as built-ins.
+- API-reference pages for `quantrules.data` and every rule module.
 - `quantrules.indicators` - the non-options indicator layer. Every function takes and
   returns `pandas` objects on the shared `DatetimeIndex`, pads warmup with `NaN`,
   annualises only through an explicit `periods_per_year`, and is covered by a registered
