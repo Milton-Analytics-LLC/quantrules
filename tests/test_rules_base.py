@@ -146,6 +146,56 @@ class TestEntryPoints:
         with pytest.raises(ConfigurationError, match="Rule"):
             base.available_rules()
 
+    def test_a_failed_discovery_is_not_cached(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(base, "_REGISTRY", {})
+        monkeypatch.setattr(base, "_ENTRY_POINT_STATE", {"loaded": False})
+        monkeypatch.setattr(
+            base, "entry_points", _entry_points_returning(FakeEntryPoint("bad", object()))
+        )
+        with pytest.raises(ConfigurationError, match="Rule"):
+            base.available_rules()
+        # The failure must not be cached as a successful load: fixing the plugin
+        # and retrying must rediscover it, not silently return a partial registry.
+        good = base.Rule(name="good", function=lambda data: data["price"])
+        monkeypatch.setattr(
+            base, "entry_points", _entry_points_returning(FakeEntryPoint("good", good))
+        )
+        assert "good" in base.available_rules()
+
+    def test_a_failed_discovery_rolls_back_partial_registration(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(base, "_REGISTRY", {})
+        monkeypatch.setattr(base, "_ENTRY_POINT_STATE", {"loaded": False})
+        good = base.Rule(name="good", function=lambda data: data["price"])
+        monkeypatch.setattr(
+            base,
+            "entry_points",
+            _entry_points_returning(FakeEntryPoint("good", good), FakeEntryPoint("bad", object())),
+        )
+        with pytest.raises(ConfigurationError, match="Rule"):
+            base.available_rules()
+        # The good rule loaded before the bad one must not linger in the registry,
+        # or a retry would collide with it instead of re-reporting the real fault.
+        assert "good" not in base._REGISTRY
+        monkeypatch.setattr(
+            base, "entry_points", _entry_points_returning(FakeEntryPoint("good", good))
+        )
+        assert base.available_rules() == ("good",)
+
+    def test_two_plugins_with_the_same_name_raise(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(base, "_REGISTRY", {})
+        monkeypatch.setattr(base, "_ENTRY_POINT_STATE", {"loaded": False})
+        first = base.Rule(name="same", function=lambda data: data["price"])
+        second = base.Rule(name="same", function=lambda data: data["price"])
+        monkeypatch.setattr(
+            base,
+            "entry_points",
+            _entry_points_returning(FakeEntryPoint("a", first), FakeEntryPoint("b", second)),
+        )
+        with pytest.raises(ConfigurationError, match="same"):
+            base.available_rules()
+
 
 class TestBuiltins:
     def test_standard_ewmac_speeds_are_registered(self) -> None:

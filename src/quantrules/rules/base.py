@@ -18,7 +18,7 @@ silently shadowing it.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING, TypeAlias
@@ -127,19 +127,31 @@ def available_rules() -> tuple[str, ...]:
     return tuple(sorted(_REGISTRY))
 
 
+def _reject_duplicate(name: str, existing: Mapping[str, Rule]) -> None:
+    """Raise if ``name`` already appears in ``existing``."""
+    if name in existing:
+        message = f"a rule named {name!r} is already registered; names must be unique"
+        raise ConfigurationError(message)
+
+
 def _register(rule: Rule) -> None:
     """Add ``rule`` to the registry, refusing to shadow an existing name."""
-    if rule.name in _REGISTRY:
-        message = f"a rule named {rule.name!r} is already registered; names must be unique"
-        raise ConfigurationError(message)
+    _reject_duplicate(rule.name, _REGISTRY)
     _REGISTRY[rule.name] = rule
 
 
 def _load_entry_points() -> None:
-    """Discover and register rules advertised on the ``quantrules.rules`` group."""
+    """Discover and register rules advertised on the ``quantrules.rules`` group.
+
+    Discovery is atomic: rules are staged and committed to the registry only once
+    the whole group has loaded cleanly, and the ``loaded`` flag is set only on
+    success. A plugin that fails to load, does not load a `Rule`, or collides with
+    an existing name therefore leaves the registry untouched and is reported again
+    on the next lookup, rather than being cached as a partial success.
+    """
     if _ENTRY_POINT_STATE["loaded"]:
         return
-    _ENTRY_POINT_STATE["loaded"] = True
+    discovered: dict[str, Rule] = {}
     for entry_point in entry_points(group=RULE_ENTRY_POINT_GROUP):
         loaded = entry_point.load()
         if not isinstance(loaded, Rule):
@@ -148,4 +160,8 @@ def _load_entry_points() -> None:
                 f"must load a Rule, got {type(loaded).__name__}"
             )
             raise ConfigurationError(message)
-        _register(loaded)
+        _reject_duplicate(loaded.name, _REGISTRY)
+        _reject_duplicate(loaded.name, discovered)
+        discovered[loaded.name] = loaded
+    _REGISTRY.update(discovered)
+    _ENTRY_POINT_STATE["loaded"] = True
