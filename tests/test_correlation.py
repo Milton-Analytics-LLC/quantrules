@@ -71,3 +71,8 @@ class TestRollingCorrelation:
     def test_rejects_a_non_positive_window(self) -> None:
         with pytest.raises(ConfigurationError, match="window"):
             rolling_correlation(series([1.0, 2.0, 3.0]), series([1.0, 2.0, 3.0]), window=0)
+
+    def test_rejects_a_window_below_two(self) -> None:
+        # A one-observation window can never yield a correlation, only NaN.
+        with pytest.raises(ConfigurationError, match="window"):
+            rolling_correlation(series([1.0, 2.0, 3.0]), series([1.0, 2.0, 3.0]), window=1)

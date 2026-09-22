@@ -15,6 +15,7 @@ from typing import cast
 
 from quantrules._typing import FloatSeries
 from quantrules._validation import ensure_aligned, ensure_positive_int, ensure_series
+from quantrules.exceptions import ConfigurationError
 
 __all__ = ["rolling_correlation"]
 
@@ -48,8 +49,8 @@ def rolling_correlation(
     Args:
         a: A series on a unique, monotonic `DatetimeIndex`.
         b: A series indexed identically to ``a``.
-        window: Trailing-window length. `None` uses an expanding window that grows
-            with the history.
+        window: Trailing-window length; at least 2, since a correlation needs two
+            observations. `None` uses an expanding window that grows with the history.
         min_periods: Observations required before a value is emitted. Defaults to
             ``window`` for a trailing window, or 2 for an expanding window.
 
@@ -58,8 +59,8 @@ def rolling_correlation(
         warmup.
 
     Raises:
-        ConfigurationError: If ``window`` or ``min_periods`` is not a positive
-            integer.
+        ConfigurationError: If ``window`` is less than 2, or ``min_periods`` is not
+            a positive integer.
         DataValidationError: If ``a`` and ``b`` are not indexed identically.
     """
     first = ensure_series(a, "a")
@@ -73,5 +74,8 @@ def rolling_correlation(
         )
         return cast("FloatSeries", first.expanding(min_periods=floor).corr(second))
     length = ensure_positive_int(window, "window")
+    if length < _MIN_CORRELATION_PERIODS:
+        message = f"window must be at least {_MIN_CORRELATION_PERIODS} to correlate, got {length}"
+        raise ConfigurationError(message)
     floor = length if min_periods is None else ensure_positive_int(min_periods, "min_periods")
     return cast("FloatSeries", first.rolling(window=length, min_periods=floor).corr(second))

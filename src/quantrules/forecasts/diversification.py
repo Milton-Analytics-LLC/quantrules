@@ -16,7 +16,7 @@ from quantrules._typing import FloatSeries, Frame
 from quantrules._validation import ensure_finite, ensure_frame, ensure_positive
 from quantrules.correlation import rolling_correlation
 from quantrules.defaults import CORRELATION_FLOOR, MAX_DIVERSIFICATION_MULTIPLIER
-from quantrules.forecasts._inputs import aligned_weights
+from quantrules.forecasts._inputs import active_weights
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -76,8 +76,7 @@ def forecast_diversification_multiplier(
         DataValidationError: If ``forecasts`` is not a valid frame.
     """
     frame = ensure_frame(forecasts, "forecasts")
-    columns = list(frame.columns)
-    weight_array = aligned_weights(weights, columns)
+    columns, weight_array = active_weights(weights, list(frame.columns))
     floor = ensure_finite(correlation_floor, "correlation_floor")
     cap = ensure_positive(max_multiplier, "max_multiplier")
     quadratic = pd.Series(float(np.sum(weight_array**2)), index=frame.index, dtype="float64")

@@ -48,3 +48,28 @@ def aligned_weights(weights: Mapping[str, float], columns: Sequence[str]) -> NDA
         message = f"weights must sum to 1, got {total}"
         raise ConfigurationError(message)
     return values
+
+
+def active_weights(
+    weights: Mapping[str, float], columns: Sequence[str]
+) -> tuple[list[str], NDArray[np.float64]]:
+    """Validate ``weights`` and return the positive-weight columns and their weights.
+
+    Zero-weight forecasts are dropped. They do not affect a weighted average or the
+    diversification quadratic form mathematically, but a disabled forecast is often
+    missing or flat, and ``NaN * 0`` is `NaN`, so keeping it would poison the result.
+
+    Args:
+        weights: Forecast weights keyed by column name.
+        columns: The forecast columns, in order.
+
+    Returns:
+        The positive-weight columns and their weights, in ``columns`` order.
+
+    Raises:
+        ConfigurationError: If ``weights`` fails `aligned_weights`' validation.
+    """
+    full = aligned_weights(weights, columns)
+    mask = full > 0.0
+    active_columns = [column for column, keep in zip(columns, mask, strict=True) if keep]
+    return active_columns, full[mask]

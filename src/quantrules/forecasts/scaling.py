@@ -10,6 +10,7 @@ from __future__ import annotations
 from quantrules._typing import FloatSeries
 from quantrules._validation import ensure_positive, ensure_positive_int, ensure_series
 from quantrules.defaults import SCALAR_ESTIMATION_MIN_PERIODS, TARGET_AVG_ABS_FORECAST
+from quantrules.exceptions import ConfigurationError
 
 __all__ = ["forecast_scalar", "scale"]
 
@@ -19,7 +20,7 @@ def forecast_scalar(
     *,
     target: float = TARGET_AVG_ABS_FORECAST,
     window: int | None = None,
-    min_periods: int = SCALAR_ESTIMATION_MIN_PERIODS,
+    min_periods: int | None = None,
 ) -> FloatSeries:
     r"""The causal forecast scalar that rescales a raw forecast to ``target``.
 
@@ -43,25 +44,33 @@ def forecast_scalar(
         target: Target long-run average absolute forecast.
         window: Trailing-window length for the mean absolute value. `None` uses an
             expanding window.
-        min_periods: Observations required before a scalar is emitted.
+        min_periods: Observations required before a scalar is emitted. Defaults to
+            the window for a trailing window, or the ~1-year expanding warmup
+            otherwise; it must not exceed the window.
 
     Returns:
         The forecast scalar, carrying ``raw``'s index with `NaN` through warmup.
 
     Raises:
-        ConfigurationError: If ``target`` is not positive, or ``window``/
-            ``min_periods`` is not a positive integer.
+        ConfigurationError: If ``target`` is not positive, ``window``/``min_periods``
+            is not a positive integer, or ``min_periods`` exceeds ``window``.
     """
     validated = ensure_series(raw, "raw")
     goal = ensure_positive(target, "target")
-    floor = ensure_positive_int(min_periods, "min_periods")
     absolute = validated.abs()
     if window is None:
-        mean_abs = absolute.expanding(min_periods=floor).mean()
-    else:
-        length = ensure_positive_int(window, "window")
-        mean_abs = absolute.rolling(window=length, min_periods=floor).mean()
-    return goal / mean_abs
+        floor = (
+            SCALAR_ESTIMATION_MIN_PERIODS
+            if min_periods is None
+            else ensure_positive_int(min_periods, "min_periods")
+        )
+        return goal / absolute.expanding(min_periods=floor).mean()
+    length = ensure_positive_int(window, "window")
+    floor = length if min_periods is None else ensure_positive_int(min_periods, "min_periods")
+    if floor > length:
+        message = f"min_periods ({floor}) must not exceed window ({length})"
+        raise ConfigurationError(message)
+    return goal / absolute.rolling(window=length, min_periods=floor).mean()
 
 
 def scale(
@@ -70,7 +79,7 @@ def scale(
     target: float = TARGET_AVG_ABS_FORECAST,
     scalar: float | None = None,
     window: int | None = None,
-    min_periods: int = SCALAR_ESTIMATION_MIN_PERIODS,
+    min_periods: int | None = None,
 ) -> FloatSeries:
     r"""Scale a raw forecast to a target average absolute forecast.
 
@@ -91,14 +100,16 @@ def scale(
             ``min_periods`` are ignored.
         window: Trailing-window length for the estimate. `None` uses an expanding
             window.
-        min_periods: Observations required before an estimated value is emitted.
+        min_periods: Observations required before an estimated value is emitted;
+            defaults to the window for a trailing window.
 
     Returns:
         The scaled forecast, carrying ``raw``'s index.
 
     Raises:
-        ConfigurationError: If ``scalar`` or ``target`` is not positive, or
-            ``window``/``min_periods`` is not a positive integer.
+        ConfigurationError: If ``scalar`` or ``target`` is not positive,
+            ``window``/``min_periods`` is not a positive integer, or ``min_periods``
+            exceeds ``window``.
     """
     validated = ensure_series(raw, "raw")
     if scalar is not None:

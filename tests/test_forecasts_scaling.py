@@ -50,6 +50,16 @@ class TestForecastScalar:
         assert result.iloc[2] == pytest.approx(4.0)
         assert result.iloc[3] == pytest.approx(10.0 / 3.0)
 
+    def test_rolling_window_below_the_expanding_warmup_does_not_raise(self) -> None:
+        # A window smaller than the default expanding warmup must adapt, not raise.
+        result = forecast_scalar(series([2.0] * 30), target=10.0, window=20)
+        assert math.isnan(result.iloc[18])
+        assert result.iloc[-1] == pytest.approx(5.0)
+
+    def test_rejects_min_periods_above_the_window(self) -> None:
+        with pytest.raises(ConfigurationError, match="window"):
+            forecast_scalar(series([1.0] * 10), window=5, min_periods=10)
+
 
 class TestScale:
     def test_explicit_scalar_multiplies(self) -> None:

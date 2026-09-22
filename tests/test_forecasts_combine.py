@@ -43,6 +43,13 @@ class TestCombine:
         result = combine(forecasts, {"a": 0.5, "b": 0.5}, fdm=fdm)
         assert np.allclose(result.to_numpy(), [2.0, 4.0, 6.0, 8.0])
 
+    def test_a_zero_weight_forecast_does_not_poison_the_combination(self) -> None:
+        # b is disabled (weight 0) and missing; it must not turn the result to NaN.
+        forecasts = _frame({"a": [1.0, 2.0, 3.0, 4.0], "b": [float("nan")] * 4})
+        fdm = pd.Series(1.0, index=forecasts.index, dtype="float64")
+        result = combine(forecasts, {"a": 1.0, "b": 0.0}, fdm=fdm)
+        assert np.allclose(result.to_numpy(), [1.0, 2.0, 3.0, 4.0])
+
     def test_never_exceeds_the_cap(self) -> None:
         forecasts = _frame(
             {"a": [5.0, 30.0, 2.0, 40.0, 4.0, 60.0], "b": [3.0, 25.0, 8.0, 35.0, 6.0, 55.0]}

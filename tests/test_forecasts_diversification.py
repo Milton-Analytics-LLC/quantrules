@@ -46,6 +46,20 @@ class TestForecastDiversificationMultiplier:
         )
         assert np.allclose(result.to_numpy(), 1.0)
 
+    def test_a_zero_weight_forecast_does_not_poison_the_multiplier(self) -> None:
+        # b is disabled (weight 0) and missing; a and c are the real, identical pair.
+        forecasts = _frame(
+            {
+                "a": [1.0, 2.0, 3.0, 4.0],
+                "b": [float("nan")] * 4,
+                "c": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+        result = forecast_diversification_multiplier(
+            forecasts, {"a": 0.5, "b": 0.0, "c": 0.5}, min_periods=2
+        )
+        assert result.iloc[-1] == pytest.approx(1.0)
+
     def test_is_bounded_between_one_and_the_cap(self) -> None:
         forecasts = _frame(
             {"a": [1.0, 3.0, 2.0, 5.0, 4.0, 6.0], "b": [2.0, 1.0, 4.0, 3.0, 6.0, 5.0]}

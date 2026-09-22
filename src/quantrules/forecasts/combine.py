@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, cast
 from quantrules._typing import FloatSeries, Frame
 from quantrules._validation import ensure_aligned, ensure_frame, ensure_positive, ensure_series
 from quantrules.defaults import FORECAST_CAP
-from quantrules.forecasts._inputs import aligned_weights
+from quantrules.forecasts._inputs import active_weights
 from quantrules.forecasts.diversification import forecast_diversification_multiplier
 from quantrules.indicators.normalize import clip
 
@@ -70,9 +70,9 @@ def combine(
             indexed identically to it.
     """
     frame = ensure_frame(forecasts, "forecasts")
-    weight_array = aligned_weights(weights, list(frame.columns))
+    active_columns, weight_array = active_weights(weights, list(frame.columns))
     limit = ensure_positive(cap, "cap")
-    weighted = cast("FloatSeries", frame @ weight_array)
+    weighted = cast("FloatSeries", frame[active_columns] @ weight_array)
     if fdm is None:
         multiplier: FloatSeries = forecast_diversification_multiplier(
             frame, weights, window=window, min_periods=min_periods
