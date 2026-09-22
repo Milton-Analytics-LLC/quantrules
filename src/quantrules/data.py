@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, cast
 import pandas as pd
 
 from quantrules._typing import FloatSeries, Frame
-from quantrules._validation import ensure_aligned, ensure_series
+from quantrules._validation import ensure_aligned, ensure_frame, ensure_series
 from quantrules.exceptions import DataValidationError
 
 if TYPE_CHECKING:
@@ -52,23 +52,7 @@ class MarketData:
         ``frame`` is deliberately typed ``object``: this is the boundary at which
         an unknown value becomes a validated container.
         """
-        if not isinstance(frame, pd.DataFrame):
-            message = f"MarketData must be built from a DataFrame, got {type(frame).__name__}"
-            raise DataValidationError(message)
-        if frame.shape[1] == 0:
-            message = "MarketData requires at least one field"
-            raise DataValidationError(message)
-        names = [str(name) for name in frame.columns]
-        if len(set(names)) != len(names):
-            duplicated = sorted(name for name in set(names) if names.count(name) > 1)
-            message = f"MarketData fields must have distinct names; duplicated: {duplicated}"
-            raise DataValidationError(message)
-        validated = {
-            name: ensure_series(frame[label], name)
-            for name, label in zip(names, frame.columns, strict=True)
-        }
-        ensure_aligned(**validated)
-        self._frame: Frame = pd.DataFrame(validated)
+        self._frame: Frame = ensure_frame(frame, "MarketData")
 
     @classmethod
     def from_fields(cls, **fields: FloatSeries) -> MarketData:

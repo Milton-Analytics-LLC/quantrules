@@ -136,6 +136,20 @@ def events_series(
     return pd.Series(flags, index=business_days(periods, start), dtype="float64")
 
 
+def forecast_panel(
+    periods: int, *, seed: int, columns: int = 3, start: str = DEFAULT_START
+) -> pd.DataFrame:
+    """Build correlated forecast series as columns ``rule_0`` .. ``rule_{columns-1}``.
+
+    Each column is a shared factor plus idiosyncratic noise, so the columns are
+    positively correlated and non-degenerate (their variances are strictly positive).
+    """
+    rng = np.random.default_rng(seed)
+    common = rng.normal(0.0, 1.0, periods)
+    data = {f"rule_{index}": common + rng.normal(0.0, 1.0, periods) for index in range(columns)}
+    return pd.DataFrame(data, index=business_days(periods, start), dtype="float64")
+
+
 def carry_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
     """Build aligned ``raw_carry`` and ``volatility`` columns for the carry rule.
 

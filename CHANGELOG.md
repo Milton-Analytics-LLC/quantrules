@@ -11,6 +11,21 @@ While the version is `0.x`, the public API may change in a minor release.
 
 ### Added
 
+- `quantrules.forecasts` - the forecast-processing layer. Every function carries the input
+  index, pads warmup with `NaN`, and is covered by a registered no-look-ahead check:
+    - `scaling`: `forecast_scalar` and `scale`, which rescale a raw forecast to a target
+      average absolute forecast either from an explicit scalar or by causal estimation.
+    - `capping`: `cap`, which clips a scaled forecast to a symmetric bound (default +/-20).
+    - `diversification`: `forecast_diversification_multiplier`, the causal
+      `1 / sqrt(wᵀ C w)` multiplier, floored and capped, that restores a combined
+      forecast's average absolute value.
+    - `combine`: `combine`, a weighted average of forecasts scaled by the diversification
+      multiplier and capped.
+- `quantrules.correlation.rolling_correlation` - a standalone, causal Pearson correlation
+  over an expanding or trailing window, shared by the diversification multiplier.
+- `quantrules._validation.ensure_frame` - validates a `DataFrame` of named series against
+  the data contract (now shared by `MarketData` and the forecast-combination functions).
+- API-reference pages for `quantrules.correlation` and every forecast module.
 - `quantrules.rules` - the trading-rule layer. Container-free rule maths, each built on the
   phase-2 indicators, scaled and capped later by `quantrules.forecasts`, and covered by a
   registered no-look-ahead check:
