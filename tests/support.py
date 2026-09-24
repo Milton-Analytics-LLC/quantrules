@@ -204,3 +204,21 @@ def position_inputs(periods: int, *, seed: int, start: str = DEFAULT_START) -> p
             ),
         }
     )
+
+
+def buffering_inputs(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build aligned ``optimal`` and ``average_position`` columns for buffering.
+
+    ``optimal`` is a random walk shifted to straddle zero (so positions may be
+    negative) and ``average_position`` is strictly positive.
+    """
+    rng = np.random.default_rng(seed)
+    index = business_days(periods, start)
+    return pd.DataFrame(
+        {
+            "optimal": random_walk(periods, seed=seed, start=start) - 100.0,
+            "average_position": pd.Series(
+                rng.uniform(20.0, 80.0, periods), index=index, dtype="float64"
+            ),
+        }
+    )

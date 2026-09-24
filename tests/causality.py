@@ -43,11 +43,13 @@ from quantrules.rules.breakout import breakout as breakout_rule
 from quantrules.rules.carry import carry as carry_rule
 from quantrules.rules.ewmac import ewmac as ewmac_rule
 from quantrules.rules.mean_reversion import mean_reversion as mean_reversion_rule
+from quantrules.sizing.buffering import buffer_position
 from quantrules.sizing.instrument_vol import instrument_value_volatility, instrument_volatility
 from quantrules.sizing.position import subsystem_position
 from quantrules.testing import Panel
 from tests.support import (
     breadth_data,
+    buffering_inputs,
     carry_data,
     crossing_pair,
     events_series,
@@ -323,6 +325,11 @@ CAUSAL_CASES: list[CausalCase] = [
             df["forecast"], df["instrument_value_volatility"], cash_vol_target=1000.0
         ),
         lambda: position_inputs(200, seed=1303),
+    ),
+    CausalCase(
+        "quantrules.sizing.buffering.buffer_position",
+        lambda df: buffer_position(df["optimal"], df["average_position"], fraction=0.1),
+        lambda: buffering_inputs(200, seed=1304),
     ),
 ]
 
