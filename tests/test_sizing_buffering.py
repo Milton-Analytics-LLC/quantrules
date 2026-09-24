@@ -29,6 +29,19 @@ class TestBufferPosition:
         result = buffer_position(optimal, series([100.0, 100.0, 100.0, 100.0]), fraction=0.0)
         pd.testing.assert_series_equal(result, optimal)
 
+    def test_disabled_buffer_follows_optimal_despite_a_missing_average(self) -> None:
+        # fraction=0 disables buffering, so a NaN in average_position must not cause
+        # a hold: the held position follows the optimal position exactly.
+        optimal = series([100.0, 105.0, 130.0])
+        average = series([100.0, float("nan"), 100.0])
+        result = buffer_position(optimal, average, fraction=0.0)
+        pd.testing.assert_series_equal(result, optimal)
+
+    def test_disabled_buffer_passes_through_a_missing_optimal(self) -> None:
+        optimal = series([100.0, float("nan"), 130.0])
+        result = buffer_position(optimal, series([100.0, 100.0, 100.0]), fraction=0.0)
+        pd.testing.assert_series_equal(result, optimal)
+
     def test_holds_when_optimal_stays_inside_the_band(self) -> None:
         result = buffer_position(
             series([100.0, 105.0, 103.0, 98.0]),

@@ -69,9 +69,10 @@ def buffer_position(
 
     for optimal position :math:`N`, average position :math:`A` and fraction
     :math:`\varphi`. On the first period with a defined band the book is flat, so
-    it trades straight to the optimal position; a period whose optimal or average
-    position is missing holds the previous position. A ``fraction`` of ``0``
-    collapses the band and trades to the optimal position every period.
+    it trades straight to the optimal position; while buffering is active, a period
+    whose optimal or average position is missing holds the previous position. A
+    ``fraction`` of ``0`` disables buffering: the held position is the optimal
+    position every period, independent of ``average_position``.
 
     Worked example: an average position of ``100`` and ``fraction`` ``0.1`` give a
     half-width of ``10``. Starting from optimal ``100`` (held ``100``), an optimal
@@ -97,6 +98,10 @@ def buffer_position(
     averages = ensure_series(average_position, "average_position")
     ensure_aligned(optimal=optimals, average_position=averages)
     width = ensure_fraction(fraction, "fraction")
+    if width == 0.0:
+        # Buffering is disabled: follow the optimal position exactly, independent
+        # of average_position (whose NaNs would otherwise poison a zero-width band).
+        return pd.Series(optimals.to_numpy(), index=optimals.index, dtype="float64")
     half = averages.abs() * width
     lower = optimals - half
     upper = optimals + half
