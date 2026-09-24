@@ -315,7 +315,7 @@ CAUSAL_CASES: list[CausalCase] = [
     CausalCase(
         "quantrules.sizing.instrument_vol.instrument_value_volatility",
         lambda df: instrument_value_volatility(
-            df["price"], df["volatility"], block_size=10.0, fx=1.5
+            df["price"], df["volatility"], block_size=10.0, exchange_rate=1.5
         ),
         lambda: instrument_data(200, seed=1302),
     ),

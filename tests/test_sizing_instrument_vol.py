@@ -31,6 +31,22 @@ class TestInstrumentVolatility:
         )
         pd.testing.assert_series_equal(result, series([0.02, 0.02, 0.02, 0.0125]))
 
+    def test_floor_uses_the_lower_not_the_upper_percentile(self) -> None:
+        # Decreasing sigma [0.04, 0.03, 0.02, 0.01] (span=1, ppy=1 => sigma=|r|).
+        # The 25th percentile of each window sits below its max, pinning the
+        # floor's direction: a 0.25 -> 0.75 flip would give the very different
+        # [0.04, 0.0375, 0.035, 0.0325].
+        returns = series([0.04, 0.03, 0.02, 0.01])
+        result = instrument_volatility(
+            returns,
+            span=1,
+            min_periods=1,
+            floor_window=4,
+            floor_percentile=0.25,
+            periods_per_year=1,
+        )
+        pd.testing.assert_series_equal(result, series([0.04, 0.0325, 0.025, 0.0175]))
+
     def test_annualises_by_root_periods_per_year(self) -> None:
         returns = random_walk(120, seed=7)
         per_year = instrument_volatility(returns, floor_percentile=0.0, periods_per_year=256)
@@ -71,7 +87,7 @@ class TestInstrumentVolatility:
 class TestInstrumentValueVolatility:
     def test_matches_the_hand_computed_product(self) -> None:
         result = instrument_value_volatility(
-            series([100.0, 200.0]), series([0.01, 0.02]), block_size=10.0, fx=2.0
+            series([100.0, 200.0]), series([0.01, 0.02]), block_size=10.0, exchange_rate=2.0
         )
         pd.testing.assert_series_equal(result, series([20.0, 80.0]))
 
@@ -94,6 +110,6 @@ class TestInstrumentValueVolatility:
         with pytest.raises(ConfigurationError, match="block_size"):
             instrument_value_volatility(series([100.0]), series([0.01]), block_size=0.0)
 
-    def test_rejects_a_non_positive_fx(self) -> None:
-        with pytest.raises(ConfigurationError, match="fx"):
-            instrument_value_volatility(series([100.0]), series([0.01]), fx=-1.0)
+    def test_rejects_a_non_positive_exchange_rate(self) -> None:
+        with pytest.raises(ConfigurationError, match="exchange_rate"):
+            instrument_value_volatility(series([100.0]), series([0.01]), exchange_rate=-1.0)

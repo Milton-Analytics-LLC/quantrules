@@ -59,7 +59,9 @@ def instrument_volatility(
     A position is inversely proportional to volatility, so an unusually quiet
     period would otherwise produce an unboundedly large position; the floor
     bounds that. A ``floor_percentile`` of ``0`` disables the floor and returns
-    the raw estimate.
+    the raw estimate. The estimate is annualised unless ``periods_per_year`` is
+    ``1``; see the period-basis note on
+    [`subsystem_position`][quantrules.sizing.position.subsystem_position].
 
     Worked example: suppose the trailing volatility window is
     ``[0.10, 0.12, 0.11, 0.09, 0.20]`` with ``floor_window=5`` and
@@ -103,7 +105,7 @@ def instrument_value_volatility(
     volatility: FloatSeries,
     *,
     block_size: float = 1.0,
-    fx: float = 1.0,
+    exchange_rate: float = 1.0,
 ) -> FloatSeries:
     r"""Cash volatility of a single contract, in the account currency.
 
@@ -113,10 +115,13 @@ def instrument_value_volatility(
     $$\sigma^{\$}_t = P_t \cdot B \cdot X \cdot \sigma_t$$
 
     for price :math:`P`, contract block size :math:`B` and the exchange rate
-    :math:`X` from the instrument's currency to the account's.
+    :math:`X` from the instrument's currency to the account's. The result shares
+    ``volatility``'s period basis: an annualised return volatility gives an
+    annualised value volatility, a per-period one gives a per-period value
+    volatility.
 
     Worked example: a price of ``100`` with return volatility ``0.01``, a block
-    size of ``10`` and an FX rate of ``2`` gives
+    size of ``10`` and an exchange rate of ``2`` gives
     :math:`100 \cdot 10 \cdot 2 \cdot 0.01 = 20`.
 
     Reference: Robert Carver, *Systematic Trading* (Harriman House, 2015),
@@ -127,7 +132,7 @@ def instrument_value_volatility(
         volatility: Fractional return volatility, indexed identically to
             ``price``.
         block_size: Contract multiplier (units of the instrument per contract).
-        fx: Exchange rate from the instrument's currency to the account's.
+        exchange_rate: Rate from the instrument's currency to the account's.
 
     Returns:
         The per-contract cash volatility, carrying the shared input index.
@@ -136,5 +141,5 @@ def instrument_value_volatility(
     volatilities = ensure_series(volatility, "volatility")
     ensure_aligned(price=prices, volatility=volatilities)
     block = ensure_positive(block_size, "block_size")
-    rate = ensure_positive(fx, "fx")
+    rate = ensure_positive(exchange_rate, "exchange_rate")
     return cast("FloatSeries", prices * block * rate * volatilities)

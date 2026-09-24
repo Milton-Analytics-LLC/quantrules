@@ -33,12 +33,22 @@ def subsystem_position(
     $$N_t = \frac{f_t}{F} \cdot \frac{V_{\text{target}}}{\sigma^{\$}_t}$$
 
     for combined forecast :math:`f` (on the average-absolute scale :math:`F`),
-    per-period cash volatility target :math:`V_{\text{target}}` and per-contract
-    cash volatility :math:`\sigma^{\$}` (see
+    cash volatility target :math:`V_{\text{target}}` and per-contract cash
+    volatility :math:`\sigma^{\$}` (see
     [`instrument_value_volatility`][quantrules.sizing.instrument_vol.instrument_value_volatility]).
-    The value volatility must be strictly positive; the volatility floor in
+
+    ``cash_vol_target`` and ``instrument_value_volatility`` must be on the same
+    period basis: pair an annualised value volatility with
+    [`annual_cash_vol_target`][quantrules.sizing.volatility_target.annual_cash_vol_target],
+    or a per-period value volatility (from ``instrument_volatility(...,
+    periods_per_year=1)``) with
+    [`periodic_cash_vol_target`][quantrules.sizing.volatility_target.periodic_cash_vol_target].
+    Mixing the two silently mis-sizes the position by a factor of
+    :math:`\sqrt{\text{periods\_per\_year}}`. The value volatility must be
+    strictly positive (a zero denominator yields a non-finite position); the
+    volatility floor in
     [`instrument_volatility`][quantrules.sizing.instrument_vol.instrument_volatility]
-    is what guarantees that in practice.
+    keeps it positive for any instrument whose returns ever move.
 
     Worked example: a forecast of ``10`` at :math:`F = 10`, a cash volatility
     target of ``1000`` and a per-contract value volatility of ``100`` give
@@ -52,8 +62,8 @@ def subsystem_position(
         forecast: The combined forecast on a unique, monotonic `DatetimeIndex`.
         instrument_value_volatility: Per-contract cash volatility, indexed
             identically to ``forecast`` and strictly positive.
-        cash_vol_target: The per-period cash volatility target (see
-            [`periodic_cash_vol_target`][quantrules.sizing.volatility_target.periodic_cash_vol_target]).
+        cash_vol_target: The cash volatility target, on the same period basis as
+            ``instrument_value_volatility`` (see the note above).
         target_avg_abs_forecast: The forecast's target average absolute value.
 
     Returns:
