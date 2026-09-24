@@ -43,6 +43,7 @@ from quantrules.rules.breakout import breakout as breakout_rule
 from quantrules.rules.carry import carry as carry_rule
 from quantrules.rules.ewmac import ewmac as ewmac_rule
 from quantrules.rules.mean_reversion import mean_reversion as mean_reversion_rule
+from quantrules.sizing.instrument_vol import instrument_value_volatility, instrument_volatility
 from quantrules.testing import Panel
 from tests.support import (
     breadth_data,
@@ -50,6 +51,7 @@ from tests.support import (
     crossing_pair,
     events_series,
     forecast_panel,
+    instrument_data,
     ohlcv,
     random_walk,
 )
@@ -298,6 +300,20 @@ CAUSAL_CASES: list[CausalCase] = [
         "quantrules.forecasts.combine.combine",
         lambda df: combine(df, _EQUAL_WEIGHTS, min_periods=20),
         lambda: forecast_panel(200, seed=1206),
+    ),
+    CausalCase(
+        "quantrules.sizing.instrument_vol.instrument_volatility",
+        lambda data: instrument_volatility(
+            data, span=36, min_periods=10, floor_window=20, floor_percentile=0.1
+        ),
+        lambda: random_walk(200, seed=1301),
+    ),
+    CausalCase(
+        "quantrules.sizing.instrument_vol.instrument_value_volatility",
+        lambda df: instrument_value_volatility(
+            df["price"], df["volatility"], block_size=10.0, fx=1.5
+        ),
+        lambda: instrument_data(200, seed=1302),
     ),
 ]
 

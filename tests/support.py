@@ -165,3 +165,23 @@ def carry_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.Dat
         index=business_days(periods, start),
         dtype="float64",
     )
+
+
+def instrument_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build aligned ``price`` and ``volatility`` columns for one instrument.
+
+    ``price`` is a strictly positive random walk and ``volatility`` is a strictly
+    positive fractional return volatility, so cash-volatility conversions never
+    hit a zero.
+    """
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame(
+        {
+            "price": random_walk(periods, seed=seed, start=start),
+            "volatility": pd.Series(
+                rng.uniform(0.005, 0.02, periods),
+                index=business_days(periods, start),
+                dtype="float64",
+            ),
+        }
+    )
