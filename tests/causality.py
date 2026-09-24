@@ -44,6 +44,7 @@ from quantrules.rules.carry import carry as carry_rule
 from quantrules.rules.ewmac import ewmac as ewmac_rule
 from quantrules.rules.mean_reversion import mean_reversion as mean_reversion_rule
 from quantrules.sizing.instrument_vol import instrument_value_volatility, instrument_volatility
+from quantrules.sizing.position import subsystem_position
 from quantrules.testing import Panel
 from tests.support import (
     breadth_data,
@@ -53,6 +54,7 @@ from tests.support import (
     forecast_panel,
     instrument_data,
     ohlcv,
+    position_inputs,
     random_walk,
 )
 
@@ -314,6 +316,13 @@ CAUSAL_CASES: list[CausalCase] = [
             df["price"], df["volatility"], block_size=10.0, fx=1.5
         ),
         lambda: instrument_data(200, seed=1302),
+    ),
+    CausalCase(
+        "quantrules.sizing.position.subsystem_position",
+        lambda df: subsystem_position(
+            df["forecast"], df["instrument_value_volatility"], cash_vol_target=1000.0
+        ),
+        lambda: position_inputs(200, seed=1303),
     ),
 ]
 
