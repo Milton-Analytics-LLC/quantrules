@@ -11,6 +11,18 @@ While the version is `0.x`, the public API may change in a minor release.
 
 ### Added
 
+- `quantrules.sizing` - the position-sizing layer. Every series-returning function carries the
+  input index, pads warmup with `NaN`, and is covered by a registered no-look-ahead check:
+    - `instrument_vol`: `instrument_volatility`, the RiskMetrics EWMA estimate floored at its own
+      trailing low percentile (the percentile floor deferred from phase 2), and
+      `instrument_value_volatility`, the cash volatility of one contract.
+    - `volatility_target`: `annual_cash_vol_target` and `periodic_cash_vol_target`, the scalar
+      cash volatility targets (the primitive-typed twins of `VolatilityTargetConfig`'s properties).
+    - `position`: `subsystem_position`, the per-instrument position from a combined forecast, the
+      per-period cash volatility target and the instrument value volatility.
+    - `buffering`: `buffer_position`, a no-trade band whose half-width is a fraction of the average
+      position, trading only back to the nearest edge.
+- API-reference pages for every sizing module.
 - `quantrules.forecasts` - the forecast-processing layer. Every function carries the input
   index, pads warmup with `NaN`, and is covered by a registered no-look-ahead check:
     - `scaling`: `forecast_scalar` and `scale`, which rescale a raw forecast to a target

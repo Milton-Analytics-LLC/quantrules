@@ -89,3 +89,8 @@ nav:
           - capping: api/forecasts/capping.md
           - diversification: api/forecasts/diversification.md
           - combine: api/forecasts/combine.md
+      - Sizing:
+          - instrument_vol: api/sizing/instrument_vol.md
+          - volatility_target: api/sizing/volatility_target.md
+          - position: api/sizing/position.md
+          - buffering: api/sizing/buffering.md

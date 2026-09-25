@@ -43,14 +43,20 @@ from quantrules.rules.breakout import breakout as breakout_rule
 from quantrules.rules.carry import carry as carry_rule
 from quantrules.rules.ewmac import ewmac as ewmac_rule
 from quantrules.rules.mean_reversion import mean_reversion as mean_reversion_rule
+from quantrules.sizing.buffering import buffer_position
+from quantrules.sizing.instrument_vol import instrument_value_volatility, instrument_volatility
+from quantrules.sizing.position import subsystem_position
 from quantrules.testing import Panel
 from tests.support import (
     breadth_data,
+    buffering_inputs,
     carry_data,
     crossing_pair,
     events_series,
     forecast_panel,
+    instrument_data,
     ohlcv,
+    position_inputs,
     random_walk,
 )
 
@@ -298,6 +304,32 @@ CAUSAL_CASES: list[CausalCase] = [
         "quantrules.forecasts.combine.combine",
         lambda df: combine(df, _EQUAL_WEIGHTS, min_periods=20),
         lambda: forecast_panel(200, seed=1206),
+    ),
+    CausalCase(
+        "quantrules.sizing.instrument_vol.instrument_volatility",
+        lambda data: instrument_volatility(
+            data, span=36, min_periods=10, floor_window=20, floor_percentile=0.1
+        ),
+        lambda: random_walk(200, seed=1301),
+    ),
+    CausalCase(
+        "quantrules.sizing.instrument_vol.instrument_value_volatility",
+        lambda df: instrument_value_volatility(
+            df["price"], df["volatility"], block_size=10.0, exchange_rate=1.5
+        ),
+        lambda: instrument_data(200, seed=1302),
+    ),
+    CausalCase(
+        "quantrules.sizing.position.subsystem_position",
+        lambda df: subsystem_position(
+            df["forecast"], df["instrument_value_volatility"], cash_vol_target=1000.0
+        ),
+        lambda: position_inputs(200, seed=1303),
+    ),
+    CausalCase(
+        "quantrules.sizing.buffering.buffer_position",
+        lambda df: buffer_position(df["optimal"], df["average_position"], fraction=0.1),
+        lambda: buffering_inputs(200, seed=1304),
     ),
 ]
 

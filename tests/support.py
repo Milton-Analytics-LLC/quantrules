@@ -165,3 +165,60 @@ def carry_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.Dat
         index=business_days(periods, start),
         dtype="float64",
     )
+
+
+def instrument_data(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build aligned ``price`` and ``volatility`` columns for one instrument.
+
+    ``price`` is a strictly positive random walk and ``volatility`` is a strictly
+    positive fractional return volatility, so cash-volatility conversions never
+    hit a zero.
+    """
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame(
+        {
+            "price": random_walk(periods, seed=seed, start=start),
+            "volatility": pd.Series(
+                rng.uniform(0.005, 0.02, periods),
+                index=business_days(periods, start),
+                dtype="float64",
+            ),
+        }
+    )
+
+
+def position_inputs(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build aligned ``forecast`` and ``instrument_value_volatility`` columns.
+
+    ``forecast`` is a signed forecast on roughly the +/-20 scale and
+    ``instrument_value_volatility`` is a strictly positive cash volatility, so
+    the position quotient never divides by zero.
+    """
+    rng = np.random.default_rng(seed)
+    index = business_days(periods, start)
+    return pd.DataFrame(
+        {
+            "forecast": pd.Series(rng.normal(0.0, 10.0, periods), index=index, dtype="float64"),
+            "instrument_value_volatility": pd.Series(
+                rng.uniform(50.0, 500.0, periods), index=index, dtype="float64"
+            ),
+        }
+    )
+
+
+def buffering_inputs(periods: int, *, seed: int, start: str = DEFAULT_START) -> pd.DataFrame:
+    """Build aligned ``optimal`` and ``average_position`` columns for buffering.
+
+    ``optimal`` is a random walk shifted to straddle zero (so positions may be
+    negative) and ``average_position`` is strictly positive.
+    """
+    rng = np.random.default_rng(seed)
+    index = business_days(periods, start)
+    return pd.DataFrame(
+        {
+            "optimal": random_walk(periods, seed=seed, start=start) - 100.0,
+            "average_position": pd.Series(
+                rng.uniform(20.0, 80.0, periods), index=index, dtype="float64"
+            ),
+        }
+    )
