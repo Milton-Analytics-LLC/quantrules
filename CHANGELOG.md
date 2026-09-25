@@ -11,6 +11,19 @@ While the version is `0.x`, the public API may change in a minor release.
 
 ### Added
 
+- `quantrules.portfolio` - the portfolio-construction layer. Every series-returning function
+  carries the input index, pads warmup with `NaN`, and is covered by a registered no-look-ahead
+  check:
+    - `idm`: `instrument_diversification_multiplier`, the causal `1 / √(wᵀ C w)` multiplier over
+      instrument-return correlations, floored and capped, built like the forecast multiplier.
+    - `concentration`: `herfindahl_hirschman_index` and `effective_number_of_instruments`.
+    - `weights`: `equal_weights` and `normalize_weights`, the instrument-weight builders.
+    - `costs`: `position_turnover` (a causal series), and `average_turnover` and `trading_cost`
+      (whole-sample scalars, cost in Sharpe-ratio units).
+- `quantrules.config.CostConfig`, wired into `SystemConfig`.
+- `quantrules._weights` - the shared weight validators, now used by the forecast and portfolio
+  layers (`quantrules.forecasts._inputs` re-exports them).
+- API-reference pages for every portfolio module.
 - `quantrules.sizing` - the position-sizing layer. Every series-returning function carries the
   input index, pads warmup with `NaN`, and is covered by a registered no-look-ahead check:
     - `instrument_vol`: `instrument_volatility`, the RiskMetrics EWMA estimate floored at its own
