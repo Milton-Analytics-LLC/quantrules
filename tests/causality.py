@@ -39,6 +39,7 @@ from quantrules.indicators import (
     volatility,
     volume,
 )
+from quantrules.portfolio.costs import position_turnover
 from quantrules.portfolio.idm import instrument_diversification_multiplier
 from quantrules.rules.breakout import breakout as breakout_rule
 from quantrules.rules.carry import carry as carry_rule
@@ -336,6 +337,11 @@ CAUSAL_CASES: list[CausalCase] = [
         "quantrules.portfolio.idm.instrument_diversification_multiplier",
         lambda df: instrument_diversification_multiplier(df, _EQUAL_WEIGHTS, min_periods=20),
         lambda: forecast_panel(200, seed=1311),
+    ),
+    CausalCase(
+        "quantrules.portfolio.costs.position_turnover",
+        lambda data: position_turnover(data, min_periods=2),
+        lambda: random_walk(150, seed=1314),
     ),
 ]
 
