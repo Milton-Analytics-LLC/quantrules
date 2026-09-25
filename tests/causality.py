@@ -39,6 +39,7 @@ from quantrules.indicators import (
     volatility,
     volume,
 )
+from quantrules.portfolio.idm import instrument_diversification_multiplier
 from quantrules.rules.breakout import breakout as breakout_rule
 from quantrules.rules.carry import carry as carry_rule
 from quantrules.rules.ewmac import ewmac as ewmac_rule
@@ -330,6 +331,11 @@ CAUSAL_CASES: list[CausalCase] = [
         "quantrules.sizing.buffering.buffer_position",
         lambda df: buffer_position(df["optimal"], df["average_position"], fraction=0.1),
         lambda: buffering_inputs(200, seed=1304),
+    ),
+    CausalCase(
+        "quantrules.portfolio.idm.instrument_diversification_multiplier",
+        lambda df: instrument_diversification_multiplier(df, _EQUAL_WEIGHTS, min_periods=20),
+        lambda: forecast_panel(200, seed=1311),
     ),
 ]
 
