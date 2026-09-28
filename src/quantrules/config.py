@@ -28,6 +28,7 @@ from typing import Any
 from quantrules import defaults
 from quantrules._validation import (
     ensure_fraction,
+    ensure_non_negative,
     ensure_positive,
     ensure_positive_int,
 )
@@ -35,6 +36,7 @@ from quantrules.exceptions import ConfigurationError
 
 __all__ = [
     "BufferingConfig",
+    "CostConfig",
     "ForecastScalingConfig",
     "SystemConfig",
     "VolatilityEstimationConfig",
@@ -209,6 +211,37 @@ class BufferingConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class CostConfig:
+    """What trading costs, per unit of turnover.
+
+    Attributes:
+        cost_per_trade: Risk-adjusted cost of one full turnover of the average
+            position, in annualised Sharpe-ratio units. `0.0` disables costs.
+        periods_per_year: Observations in a year, used to annualise turnover.
+    """
+
+    cost_per_trade: float = 0.0
+    periods_per_year: int = defaults.BUSINESS_DAYS_PER_YEAR
+
+    def __post_init__(self) -> None:
+        """Validate and normalise the supplied values."""
+        set_ = object.__setattr__
+        set_(self, "cost_per_trade", ensure_non_negative(self.cost_per_trade, "cost_per_trade"))
+        set_(
+            self, "periods_per_year", ensure_positive_int(self.periods_per_year, "periods_per_year")
+        )
+
+    def to_mapping(self) -> dict[str, Any]:
+        """Return this config as a plain, serialisable mapping."""
+        return asdict(self)
+
+    @classmethod
+    def from_mapping(cls, mapping: Mapping[str, Any]) -> CostConfig:
+        """Build a config from a plain mapping, as produced by `to_mapping`."""
+        return cls(**mapping)
+
+
+@dataclass(frozen=True, slots=True)
 class SystemConfig:
     """Every configurable part of a system, in one object.
 
@@ -220,6 +253,7 @@ class SystemConfig:
         volatility_estimation: How return volatility is estimated.
         forecast_scaling: How forecasts are scaled and capped.
         buffering: How far positions may drift before trading.
+        costs: What trading costs, per unit of turnover.
     """
 
     volatility_target: VolatilityTargetConfig
@@ -228,6 +262,7 @@ class SystemConfig:
     )
     forecast_scaling: ForecastScalingConfig = field(default_factory=ForecastScalingConfig)
     buffering: BufferingConfig = field(default_factory=BufferingConfig)
+    costs: CostConfig = field(default_factory=CostConfig)
 
     def to_mapping(self) -> dict[str, Any]:
         """Return this config, and every config nested in it, as plain mappings."""
@@ -266,4 +301,6 @@ class SystemConfig:
             )
         if "buffering" in mapping:
             sections["buffering"] = BufferingConfig.from_mapping(mapping["buffering"])
+        if "costs" in mapping:
+            sections["costs"] = CostConfig.from_mapping(mapping["costs"])
         return cls(**sections)

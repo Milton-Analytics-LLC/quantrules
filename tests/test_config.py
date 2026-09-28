@@ -12,6 +12,7 @@ import pytest
 from quantrules import defaults
 from quantrules.config import (
     BufferingConfig,
+    CostConfig,
     ForecastScalingConfig,
     SystemConfig,
     VolatilityEstimationConfig,
@@ -137,6 +138,25 @@ class TestBufferingConfig:
             BufferingConfig(fraction=1.5)
 
 
+class TestCostConfig:
+    def test_defaults_to_free_trading(self) -> None:
+        config = CostConfig()
+
+        assert config.cost_per_trade == 0.0
+        assert config.periods_per_year == defaults.BUSINESS_DAYS_PER_YEAR
+
+    def test_stores_a_cost(self) -> None:
+        assert CostConfig(cost_per_trade=0.002).cost_per_trade == 0.002
+
+    def test_rejects_a_negative_cost(self) -> None:
+        with pytest.raises(ConfigurationError, match="cost_per_trade"):
+            CostConfig(cost_per_trade=-0.1)
+
+    def test_rejects_a_non_positive_periods_per_year(self) -> None:
+        with pytest.raises(ConfigurationError, match="periods_per_year"):
+            CostConfig(periods_per_year=0)
+
+
 class TestSystemConfig:
     def test_requires_a_volatility_target_and_defaults_the_rest(self) -> None:
         target = VolatilityTargetConfig(annual_vol_target=0.25, capital=1_000_000.0)
@@ -147,6 +167,7 @@ class TestSystemConfig:
         assert config.volatility_estimation == VolatilityEstimationConfig()
         assert config.forecast_scaling == ForecastScalingConfig()
         assert config.buffering == BufferingConfig()
+        assert config.costs == CostConfig()
 
     def test_is_frozen(self) -> None:
         config = SystemConfig(
@@ -165,6 +186,7 @@ class TestMappingRoundTrip:
             VolatilityEstimationConfig(span=20, min_periods=5),
             ForecastScalingConfig(window=750),
             BufferingConfig(fraction=0.2),
+            CostConfig(cost_per_trade=0.001),
         ],
     )
     def test_flat_configs_round_trip(self, config: object) -> None:
@@ -177,6 +199,7 @@ class TestMappingRoundTrip:
         config = SystemConfig(
             volatility_target=VolatilityTargetConfig(annual_vol_target=0.30, capital=250_000.0),
             buffering=BufferingConfig(fraction=0.05),
+            costs=CostConfig(cost_per_trade=0.0015),
         )
 
         restored = SystemConfig.from_mapping(config.to_mapping())

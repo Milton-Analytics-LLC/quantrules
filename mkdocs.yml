@@ -94,3 +94,8 @@ nav:
           - volatility_target: api/sizing/volatility_target.md
           - position: api/sizing/position.md
           - buffering: api/sizing/buffering.md
+      - Portfolio:
+          - idm: api/portfolio/idm.md
+          - concentration: api/portfolio/concentration.md
+          - weights: api/portfolio/weights.md
+          - costs: api/portfolio/costs.md
